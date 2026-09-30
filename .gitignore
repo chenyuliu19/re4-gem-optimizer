@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 测试缓存
+.pytest_cache/
+.coverage
+
+# IDE
+.idea/
+.vscode/
+
+# 本机工作记录与凭据
+.workbuddy/
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+*.pem
+*.p12
+*.key
+*.log
