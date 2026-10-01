@@ -361,6 +361,24 @@ def test_initial_layout_keeps_left_controls_visible(app_root):
         app_root.withdraw()
 
 
+@pytest.mark.parametrize("screen_height", [768, 900, 1120])
+def test_left_controls_fit_on_different_screen_heights(app_root, monkeypatch, screen_height):
+    """小屏和普通屏首次打开时，生成按钮与状态文字都应露在结果区上方。"""
+    monkeypatch.setattr(app_root, "winfo_screenheight", lambda: screen_height)
+    monkeypatch.setattr(app_root, "winfo_screenwidth", lambda: 1280)
+    app_root.deiconify()
+    try:
+        app = DesktopApp(app_root)
+        app_root.update()
+        assert app.generate_btn.winfo_ismapped()
+        assert app.status_label.winfo_ismapped()
+        assert app.status_label.winfo_rooty() + app.status_label.winfo_height() <= app.result_pane.winfo_rooty()
+    finally:
+        for child in app_root.winfo_children():
+            child.destroy()
+        app_root.withdraw()
+
+
 def test_result_placeholder_on_start(app):
     """未计算时结果区显示占位提示。"""
     texts = _collect_texts(app.result_frame)

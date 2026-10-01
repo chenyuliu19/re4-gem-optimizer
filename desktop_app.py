@@ -173,9 +173,11 @@ class DesktopApp:
         self.root.title("《生化危机4 重制版》宝物镶嵌优化工具")
         was_withdrawn = self.root.state() == "withdrawn"
         self.root.withdraw()
-        self.compact = self.root.winfo_screenheight() < 900
-        self.image_size = 48 if self.compact else IMAGE_SIZE
-        self.row_padding = 1 if self.compact else 3
+        screen_h = self.root.winfo_screenheight()
+        self.compact = screen_h < 1120
+        self.very_compact = screen_h < 820
+        self.image_size = 32 if self.very_compact else 48 if self.compact else IMAGE_SIZE
+        self.row_padding = 0 if self.very_compact else 1 if self.compact else 3
 
         # 输入变量。
         self.gem_vars: list[tk.StringVar] = [tk.StringVar(value="0") for _ in range(NUM_GEMS)]
@@ -228,8 +230,8 @@ class DesktopApp:
         w = min(target_w, max_w)
 
         # 结果栏保持较低高度（约为早期版本 1.5 倍），上方至少容纳左栏的所有控件。
-        # 普通屏 270、小屏紧凑 203；增加的高度全部来自初始窗口增高，不挤压上方区域。
-        result_h = 203 if self.compact else 270
+        # 普通屏 270、小屏 203、极小屏 190；优先保证左栏按钮完整可见。
+        result_h = 190 if self.very_compact else 203 if self.compact else 270
         self.result_pane.configure(height=result_h)
         self.root.update_idletasks()
         top_h = self.input_header.winfo_reqheight() + self.left_panel.winfo_reqheight() + 36
@@ -360,7 +362,11 @@ class DesktopApp:
             shape_cn = "圆形" if g.shape == "round" else "矩形"
             ttk.Label(
                 info,
-                text=f"{g.name_en} · {COLOR_CN[g.color]} · {shape_cn} · 单颗 {_fmt(g.price)} ptas",
+                text=(
+                    f"{COLOR_CN[g.color]} · {shape_cn} · {_fmt(g.price)} ptas"
+                    if self.compact else
+                    f"{g.name_en} · {COLOR_CN[g.color]} · {shape_cn} · 单颗 {_fmt(g.price)} ptas"
+                ),
                 foreground="#555",
                 wraplength=200,
             ).pack(anchor="w")
