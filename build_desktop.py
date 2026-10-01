@@ -174,6 +174,9 @@ def make_public_zip() -> None:
 
 
 def main() -> None:
+    # 某些英文 Windows 控制台默认 cp1252；中文进度提示不应中断构建。
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(errors="backslashreplace")
     do_clean = "--no-clean" not in sys.argv
 
     # 0. 先保护用户图片：确保 dist 里已放好的图片进入 assets_backup。
