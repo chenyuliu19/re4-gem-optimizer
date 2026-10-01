@@ -364,6 +364,8 @@ def test_initial_layout_keeps_left_controls_visible(app_root):
 @pytest.mark.parametrize("screen_height", [768, 900, 1120])
 def test_left_controls_fit_on_different_screen_heights(app_root, monkeypatch, screen_height):
     """小屏和普通屏首次打开时，生成按钮与状态文字都应露在结果区上方。"""
+    if screen_height > app_root.winfo_screenheight():
+        pytest.skip("runner display is shorter than the simulated screen")
     monkeypatch.setattr(app_root, "winfo_screenheight", lambda: screen_height)
     monkeypatch.setattr(app_root, "winfo_screenwidth", lambda: 1280)
     app_root.deiconify()
