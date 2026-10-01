@@ -1,0 +1,8 @@
+# 桌面版构建依赖（Python 3.12 64 位）
+# 运行时依赖：re4_gems 包 + ortools + pillow
+ortools>=9.7.0
+pillow>=10.0.0
+# 打包依赖
+pyinstaller>=6.0.0
+# 测试依赖
+pytest>=7.4.0

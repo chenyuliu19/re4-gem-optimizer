@@ -1,6 +1,7 @@
 """Streamlit 交互回归：输入状态、导入、错误与结果快照。"""
 
 import json
+import io
 from pathlib import Path
 from unittest.mock import patch
 
@@ -51,7 +52,9 @@ def test_json_import_is_explicit_and_runs_only_once():
     payload = json.dumps(
         {"gems": {"ruby": 2}, "reserved": {"ruby": 1}, "treasures": {"flagon": 1}}
     ).encode("utf-8")
-    at.get("file_uploader")[0].upload("inventory.json", payload, "application/json").run(timeout=30)
+    # Streamlit AppTest 1.50 exposes file_uploader as UnknownElement, so inject
+    # the uploaded-file interface directly into session state for this callback test.
+    at.session_state["upload"] = io.BytesIO(payload)
     assert number(at, "gem_inv_ruby").value == 0
 
     click(at, "导入所选 JSON")
@@ -77,7 +80,7 @@ def test_json_import_is_explicit_and_runs_only_once():
 def test_bad_json_preserves_inventory_and_shows_error(payload):
     at = app()
     click(at, "加载示例")
-    at.get("file_uploader")[0].upload("bad.json", payload, "application/json").run(timeout=30)
+    at.session_state["upload"] = io.BytesIO(payload)
     click(at, "导入所选 JSON")
     assert number(at, "gem_inv_ruby").value == 2
     assert any("导入失败" in item.value for item in at.error)

@@ -8,6 +8,15 @@ venv/
 .pytest_cache/
 .coverage
 
+# PyInstaller 构建产物
+build/
+build_tmp/
+dist/
+*.manifest
+
+# 用户手动放置的游戏图片备份（不应提交到公开仓库）
+assets_backup/
+
 # IDE
 .idea/
 .vscode/

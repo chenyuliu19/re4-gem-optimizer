@@ -25,13 +25,45 @@ from re4_gems.solver import (
 )
 from re4_gems.treasure_data import TREASURES, TREASURE_BY_ID
 
+import web_images
+
 st.set_page_config(page_title="RE4 宝物镶嵌优化工具", page_icon="💎", layout="wide")
 
 GEM_IDS = [g.gem_id for g in GEMS]
 
+# 网页版缩略图边长（像素）。
+THUMB_SIZE = 48
+
 
 def _fmt(v: int) -> str:
     return f"{v:,}"
+
+
+def _render_thumb(kind: str, item_id: str, label: str, size: int = THUMB_SIZE) -> None:
+    """在名称旁显示一张缩略图；缺图/损坏时显示简洁占位，不影响计算。
+
+    kind 取 "gems" 或 "treasures"；item_id 为英文 ID；label 为占位文字。
+    """
+    data = web_images.image_bytes(kind, item_id)
+    if data is not None:
+        try:
+            st.image(data, width=size)
+            return
+        except Exception:
+            # PNG 文件损坏时保留表单和求解功能。
+            pass
+
+    # 简洁占位：一个浅色圆角块 + 首字。
+    st.markdown(
+        (
+            f"<div style='width:{size}px;height:{size}px;"
+            "border:1px dashed #bbb;border-radius:6px;"
+            "display:flex;align-items:center;justify-content:center;"
+            "color:#999;font-size:18px;background:#f7f7f7;'>"
+            f"{label[0]}</div>"
+        ),
+        unsafe_allow_html=True,
+    )
 
 
 def build_state_key(gem_inventory, reserved, treasure_counts, mode, time_limit) -> str:
@@ -139,7 +171,9 @@ def main() -> None:
     with col_gem:
         st.subheader("宝石库存")
         for g in GEMS:
-            c1, c2, c3, c4 = st.columns([2, 2, 1.4, 1])
+            c_img, c1, c2, c3, c4 = st.columns([0.7, 1.8, 2, 1.4, 1])
+            with c_img:
+                _render_thumb("gems", g.gem_id, g.name_cn)
             with c1:
                 st.markdown(f"**{g.name_cn}**")
                 st.caption(f"{g.name_en}")
@@ -171,7 +205,9 @@ def main() -> None:
         st.subheader("宝物库存")
         st.caption("选择名称并填写数量；同款多件可采用不同方案。")
         for t in TREASURES:
-            c1, c2 = st.columns([3, 1])
+            c_img, c1, c2 = st.columns([0.7, 3, 1])
+            with c_img:
+                _render_thumb("treasures", t.treasure_id, t.name_cn)
             with c1:
                 st.markdown(f"**{t.name_cn}**（{t.name_en}）")
                 st.caption(
