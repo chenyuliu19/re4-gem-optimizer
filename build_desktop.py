@@ -3,7 +3,7 @@
 用 Python 3.12 64 位运行，产出：
 - dist/RE4GemOptimizer/  整个可运行文件夹（--onedir --windowed）
 - dist/RE4GemOptimizer.zip  本地自用压缩包（含用户自行放入的图片）
-- dist/RE4GemOptimizer-public.zip  公开发布包（不含用户图片）
+- dist/RE4GemOptimizer-public.zip  公开发布包（含仓库自带的 16 张图片）
 
 最终用户解压 ZIP 后双击 RE4GemOptimizer.exe 即可，无需安装 Python。
 
@@ -78,6 +78,23 @@ EXPECTED_TREASURE_IDS = [
     "golden_lynx", "ornate_necklace", "elegant_crown",
 ]
 
+BUNDLED_IMAGE_PATHS = tuple(
+    Path("assets") / kind / f"{item_id}.png"
+    for kind, ids in (("gems", EXPECTED_GEM_IDS), ("treasures", EXPECTED_TREASURE_IDS))
+    for item_id in ids
+)
+
+
+def bundled_images() -> list[tuple[Path, Path]]:
+    """返回仓库自带图片的 (源文件, 相对路径)，缺图就阻止发布。"""
+    images = []
+    for relative in BUNDLED_IMAGE_PATHS:
+        source = ROOT / relative
+        if not source.is_file():
+            raise FileNotFoundError(f"缺少发布图片：{source}")
+        images.append((source, relative))
+    return images
+
 
 def run(cmd: list[str]) -> None:
     print("+", " ".join(cmd))
@@ -120,6 +137,18 @@ def restore_user_images(target: Path) -> int:
     return restored
 
 
+def copy_bundled_images(target: Path) -> int:
+    """用仓库自带图片补齐缺项，保留用户已放入或从备份恢复的版本。"""
+    copied = 0
+    for source, relative in bundled_images():
+        destination = target / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if not destination.exists():
+            shutil.copy2(source, destination)
+            copied += 1
+    return copied
+
+
 def collect_user_images_into_backup() -> None:
     """首次运行：若 dist 里已有用户图片但 assets_backup 缺失，则先备份。
 
@@ -157,7 +186,8 @@ def make_zip() -> None:
 
 
 def make_public_zip() -> None:
-    """生成可公开分发的程序包，排除本地用户自行添加的图片。"""
+    """只收录程序文件及仓库自带图片，避免带进本机私人文件。"""
+    images = bundled_images()
     if PUBLIC_ZIP_PATH.exists():
         PUBLIC_ZIP_PATH.unlink()
     with zipfile.ZipFile(PUBLIC_ZIP_PATH, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -165,12 +195,16 @@ def make_public_zip() -> None:
             if not f.is_file():
                 continue
             relative = f.relative_to(APP_DIR)
-            if relative.parts[0] == "assets" and relative.as_posix() not in {
+            if relative.parts[0] != "_internal" and relative.as_posix() not in {
+                "RE4GemOptimizer.exe",
+                "使用说明.txt",
                 "assets/gems/放图片说明.txt",
                 "assets/treasures/放图片说明.txt",
             }:
                 continue
             zf.write(f, f.relative_to(DIST))
+        for source, relative in images:
+            zf.write(source, Path("RE4GemOptimizer") / relative)
 
 
 def main() -> None:
@@ -212,13 +246,15 @@ def main() -> None:
     # 5. 从备份恢复用户图片（缺失才补，不覆盖已有）。
     restored = restore_user_images(APP_DIR)
     print(f"从备份恢复用户图片：{restored} 张")
+    copied = copy_bundled_images(APP_DIR)
+    print(f"补齐随程序附带的图片：{copied} 张")
 
     # 6. 复制面向普通用户的使用说明到产物目录。
     shutil.copy2(ROOT / "DESKTOP_README.txt", APP_DIR / "使用说明.txt")
 
     # 7. 打成 ZIP（本地自用，含用户图片）。
     make_zip()
-    # 8. 单独生成不含用户图片的公开发布包。
+    # 8. 单独生成只含仓库自带图片的公开发布包。
     make_public_zip()
 
     print(f"\n构建完成：\n  文件夹：{APP_DIR}\n  本地 ZIP：{ZIP_PATH}\n  公开 ZIP：{PUBLIC_ZIP_PATH}")

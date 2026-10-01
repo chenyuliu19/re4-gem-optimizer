@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/publish-windows.yml
+      - assets/**
       - desktop/**
       - desktop_app.py
       - build_desktop.py
@@ -39,11 +40,22 @@ jobs:
         run: |
           @'
           import zipfile
+          import io
+          from PIL import Image
+          from build_desktop import BUNDLED_IMAGE_PATHS
+          expected_images = {'RE4GemOptimizer/' + path.as_posix() for path in BUNDLED_IMAGE_PATHS}
           with zipfile.ZipFile('dist/RE4GemOptimizer-public.zip') as archive:
-              names = archive.namelist()
+              names = set(archive.namelist())
               assert archive.testzip() is None
               assert 'RE4GemOptimizer/RE4GemOptimizer.exe' in names
-              assert not any('/assets/' in name and name.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')) for name in names)
+              assert expected_images <= names
+              allowed_assets = expected_images | {
+                  'RE4GemOptimizer/assets/gems/放图片说明.txt',
+                  'RE4GemOptimizer/assets/treasures/放图片说明.txt',
+              }
+              assert {name for name in names if name.startswith('RE4GemOptimizer/assets/')} == allowed_assets
+              for name in expected_images:
+                  Image.open(io.BytesIO(archive.read(name))).verify()
           '@ | python -
       - name: Publish release
         shell: pwsh
@@ -61,7 +73,7 @@ jobs:
             tag_name = $tag
             target_commitish = $env:GITHUB_SHA
             name = "Windows desktop $tag"
-            body = 'Windows 窗口版：下载 RE4GemOptimizer-public.zip，完整解压后双击 RE4GemOptimizer.exe。网页版请从仓库下载源码，详细步骤见 BEGINNER_GUIDE.md。发布包不包含游戏图片。'
+            body = 'Windows 窗口版：下载 RE4GemOptimizer-public.zip，完整解压后双击 RE4GemOptimizer.exe。发布包附带 6 张宝石和 10 张宝物图片。网页版请从仓库下载源码，详细步骤见 BEGINNER_GUIDE.md。'
             draft = $false
             prerelease = $false
           } | ConvertTo-Json -Compress

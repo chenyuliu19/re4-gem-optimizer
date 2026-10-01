@@ -4,7 +4,7 @@
 
 **第一次使用请看 [Windows 零基础教程](BEGINNER_GUIDE.md)**：它分别讲解窗口版的下载、解压和双击运行，以及网页版从安装 Python 到打开浏览器的全部步骤。
 
-- **想直接双击使用：**到 [GitHub Releases](https://github.com/chenyuliu19/re4-gem-optimizer/releases/latest) 的 **Assets** 下载 `RE4GemOptimizer-public.zip`，解压后双击其中的 `RE4GemOptimizer.exe`。发布包不附游戏图片，缺图时显示占位内容。
+- **想直接双击使用：**到 [GitHub Releases](https://github.com/chenyuliu19/re4-gem-optimizer/releases/latest) 的 **Assets** 下载 `RE4GemOptimizer-public.zip`，解压后双击其中的 `RE4GemOptimizer.exe`。发布包附带 16 张宝石与宝物图片，打开即可显示。
 - **想使用网页版：**从仓库绿色 **Code → Download ZIP** 下载源码，按[零基础教程的网页版步骤](BEGINNER_GUIDE.md#二网页版在浏览器里运行)安装 Python 并运行。源码 ZIP **不包含 exe**。
 
 两版共用优化规则，可同时安装，但库存不会自动同步。下面的内容主要用于了解项目结构与规则。
@@ -33,6 +33,9 @@ web_images.py          网页版图片路径查找（纯路径查找，不依赖
 desktop_app.py         桌面版入口（Tkinter，不依赖 Streamlit/app.py）
 desktop/
   images.py            桌面版图片加载（按英文 ID 从 assets/ 读取，缺图显示占位）
+assets/
+  gems/                6 张宝石 PNG 图片
+  treasures/           10 张宝物 PNG 图片
 RE4GemOptimizer.spec   PyInstaller 打包配置（--onedir --windowed）
 build_desktop.py       Windows 桌面版构建脚本
 requirements-desktop.txt  桌面版构建依赖
@@ -79,7 +82,7 @@ py -3.12 -m venv .venv
 
 ### 网页版图片
 
-网页版会在宝石 6 行与宝物 10 行的名称旁显示约 48 像素的缩略图，按英文 ID 查找文件名。公开源码不附图片；如果你有可使用的 PNG，请按[零基础教程的图片步骤](BEGINNER_GUIDE.md#三添加宝石和宝物图片可选)自行放置：
+网页版会在宝石 6 行与宝物 10 行的名称旁显示约 48 像素的缩略图，按英文 ID 查找文件名。公开源码已附带这 16 张图片，下载源码后即可显示；也可以按[零基础教程的图片步骤](BEGINNER_GUIDE.md#三查看与替换宝石和宝物图片可选)替换为自己的 PNG：
 
 ```
 assets/gems/<gem_id>.png        如 assets/gems/ruby.png
@@ -199,9 +202,9 @@ assets/treasures/<treasure_id>.png  如 assets/treasures/flagon.png
 
 详细步骤见[Windows 零基础教程](BEGINNER_GUIDE.md#一窗口版双击-exe-运行)、随包附带的 `使用说明.txt` 或项目根目录的 `DESKTOP_README.txt`。绿色 **Code → Download ZIP** 得到的是源码，没有 exe。
 
-**关于图片**：公开发布包不附游戏图片，程序默认显示文字占位图。想显示真实图片，把自己可使用的 PNG 按英文名放进 exe 同级的 `assets/gems/` 和 `assets/treasures/` 目录（目录里各有一份 `放图片说明.txt`），重新打开程序即可，无需重新打包。缺图或图片损坏时自动回退占位图，程序照常可用。
+**关于图片**：公开发布包已附带 6 张宝石和 10 张宝物图片，解压后即可显示。想替换图片，把自己的 PNG 按英文名放进 exe 同级的 `assets/gems/` 和 `assets/treasures/` 目录，覆盖对应文件并重新打开程序即可，无需重新打包。缺图或图片损坏时自动回退占位图，程序照常可用。
 
-> 网页版与桌面版使用相同的 PNG 文件名：桌面版读 exe 同级 `assets/`，网页版优先读项目根目录 `assets/`。如果两个版本分别下载到不同文件夹，请将自己的图片各复制一份；缺图不会影响计算。
+> 网页版与桌面版使用相同的 PNG 文件名：桌面版读 exe 同级 `assets/`，网页版优先读项目根目录 `assets/`。如果两个版本分别下载到不同文件夹，替换图片时请在各自的 `assets/` 中操作；缺图不会影响计算。
 
 ### 面向开发者：构建
 
@@ -211,7 +214,7 @@ assets/treasures/<treasure_id>.png  如 assets/treasures/flagon.png
 # 1. 安装构建依赖
 py -3.12 -m pip install -r requirements-desktop.txt
 
-# 2. 运行构建脚本（产出 dist/RE4GemOptimizer/ 与 dist/RE4GemOptimizer.zip）
+# 2. 运行构建脚本（产出可运行文件夹、本地 ZIP 与公开 ZIP）
 py -3.12 build_desktop.py
 
 # 若在受保护环境删除 dist/build 触发确认，可先手动删除再：
@@ -225,7 +228,7 @@ py -3.12 build_desktop.py --no-clean
 桌面版测试与算法测试都在 Python 3.12 环境运行（网页版 `test_ui.py` 依赖 Streamlit，需在装有 Streamlit 的环境跑）：
 
 ```powershell
-py -3.12 -m pytest tests/test_optimizer.py tests/test_core_validation.py tests/test_desktop.py -q
+py -3.12 -m pytest tests/test_optimizer.py tests/test_core_validation.py tests/test_desktop.py tests/test_build_desktop.py -q
 ```
 
 桌面版打包后自检（验证 exe 内 ortools 动态库与求解链路）：
@@ -251,7 +254,7 @@ py -3.12 -m pytest tests/test_optimizer.py tests/test_core_validation.py tests/t
 
 ### 已知限制
 
-- 交付包较大（约 68 MB 压缩包），因为完整打包了 OR-Tools 及其 numpy/pandas 运行时。
+- 交付包较大（约 70 MB 压缩包），因为完整打包了 OR-Tools 及其 numpy/pandas 运行时。
 - 未在**完全没有 Python 的干净 Windows 虚拟机**上做独立安装验证；本次验证是在开发机（本身装有 Python 3.12）上启动打包后的 exe 完成，已确认：无控制台窗口、GUI 窗口正常显示、无图片（占位图）与有图片两种情况均不崩溃、示例「酒壶 1 + 蝴蝶灯 1 + 红宝石 2 + 黄钻石 3」正确得到 49,800 ptas。
 
 ---
@@ -259,3 +262,5 @@ py -3.12 -m pytest tests/test_optimizer.py tests/test_core_validation.py tests/t
 ## 免责声明
 
 本工具基于公开整理的《生化危机4 重制版》镶嵌规则实现，仅供学习与游戏辅助；实际游戏行为请以游戏内为准。
+
+随包图片来自 [Evil Resource](https://www.evilresource.com/resident-evil-4-remake/treasures)，游戏图像权利归 Capcom 等原权利人。项目维护者确认拥有随本项目再分发这些图片的授权；仓库公开不表示图片可供第三方另行复制或再分发。
